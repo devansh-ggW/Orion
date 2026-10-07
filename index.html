@@ -31,8 +31,6 @@
     </nav>
     <div class="top-status">
       <span class="status-dot"></span>
-      <span>LOCAL · NO UPLOAD</span>
-      <span class="status-divider"></span>
       <span id="engineCount">0 rules loaded</span>
     </div>
   </header>
@@ -42,7 +40,7 @@
       <div class="hero-copy">
         <p class="eyebrow">CODE IN. RISK OUT.</p>
         <h1>Make your website harder to break.</h1>
-        <p class="lede">Drop the project files. Orion reads the project, looks for risky patterns, explains each problem in plain English, and gives you clear repair instructions.</p>
+        <p class="lede">Drop the project files. Orion reads the project, looks for risky patterns, and gives you clear repair instructions.</p>
         <div class="hero-actions">
           <button class="btn btn-primary" id="chooseBtn">Choose files or ZIP</button>
           <button class="btn btn-ghost" id="folderBtn">Choose folder</button>
@@ -104,7 +102,7 @@
         <div>
           <div class="plain-summary-kicker">AT A GLANCE</div>
           <div class="plain-summary-title" id="plainSummaryTitle">Orion is ready.</div>
-          <div class="plain-summary-copy" id="plainSummaryCopy">We will explain every problem in normal language and show where it came from.</div>
+          <div class="plain-summary-copy" id="plainSummaryCopy">Here is what needs attention and where it came from.</div>
         </div>
       </section>
 
@@ -117,8 +115,8 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">WHAT ORION FOUND</p>
-            <h3>Problems, explained like a human.</h3>
-            <p>Each item tells you what is wrong, why it matters, and what should change. No security vocabulary required.</p>
+            <h3>What Orion found.</h3>
+            <p>Each item shows what was found, why it matters, and what should change.</p>
           </div>
           <button class="text-btn hidden" id="copySummaryBtn">Copy summary</button>
         </div>
@@ -140,7 +138,7 @@
 
       <section class="prompt-card hidden" id="promptCard">
         <div class="card-head">
-          <div><h3>Repair instructions</h3><p>Optional: Orion can write the exact instructions for Claude, Kimi, or another coding agent. You do not need to understand the security terms first.</p></div>
+          <div><h3>Repair instructions</h3><p>Orion can write focused repair instructions for Claude, Kimi, or another coding agent.</p></div>
           <div class="prompt-actions">
             <button class="text-btn" id="copyPromptBtn" disabled>Copy prompt</button>
             <button class="btn btn-primary btn-small" id="downloadPromptBtn" disabled>Save instructions</button>
