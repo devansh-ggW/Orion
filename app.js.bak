@@ -1,0 +1,267 @@
+(function(){
+  const $ = s => document.querySelector(s);
+  const state = {files:[], result:null, filter:'all', selected:null, projectName:'Untitled project'};
+  const engineCount = $('#engineCount');
+  engineCount.textContent = `${OrionEngine.RULES.length} checks loaded`;
+
+  const core = $('#core');
+  let dragging=false, lastX=0,lastY=0, rotX=-22, rotY=32;
+  $('#sceneWrap').addEventListener('pointerdown', e => { dragging=true; lastX=e.clientX; lastY=e.clientY; $('#sceneWrap').setPointerCapture?.(e.pointerId); });
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    rotY += (e.clientX-lastX)*.35; rotX -= (e.clientY-lastY)*.25; lastX=e.clientX; lastY=e.clientY;
+    core.style.animation='none'; core.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(8deg)`;
+  });
+  window.addEventListener('pointerup',()=>dragging=false);
+
+  const dropZone = $('#dropZone'); const fileInput=$('#fileInput'); const folderInput=$('#folderInput');
+  function openPicker(input){
+    input.value='';
+    try{
+      if(typeof input.showPicker==='function') input.showPicker();
+      else input.click();
+    }catch(e){ input.click(); }
+  }
+  $('#chooseBtn').onclick=e=>{ e.preventDefault(); e.stopPropagation(); openPicker(fileInput); };
+  $('#folderBtn').onclick=e=>{ e.preventDefault(); e.stopPropagation(); openPicker(folderInput); };
+  dropZone.onclick=e=>{ if(e.target.closest('button,a,input')) return; openPicker(fileInput); };
+  dropZone.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPicker(fileInput);}};
+  ['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('dragging');}));
+  ['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('dragging');}));
+  dropZone.addEventListener('drop', async e => {
+    try {
+      const dropped = await collectDroppedFiles(e.dataTransfer);
+      if(!dropped.length){ toast('Nothing readable was dropped. Try a ZIP or select the folder.'); return; }
+      await handleFiles(dropped);
+    } catch(err) {
+      console.error(err);
+      toast(`Could not read dropped files: ${err.message}`);
+    }
+  });
+  fileInput.addEventListener('change', async e => { await handleFiles([...e.target.files]); e.target.value=''; });
+  folderInput.addEventListener('change', async e => { await handleFiles([...e.target.files]); e.target.value=''; });
+
+  $('#demoBtn').onclick=async()=>{ state.files=OrionEngine.makeTestProject(); state.projectName='Orion test project'; prepareScan(); await runScan(); };
+  $('#resetBtn').onclick=()=>{state.files=[]; state.result=null; state.selected=null; state.filter='all'; document.querySelectorAll('.filter').forEach((x,i)=>x.classList.toggle('active',i===0)); $('#scanPanel').classList.add('hidden'); $('#dropZone').scrollIntoView({behavior:'smooth'}); toast('Reset');};
+  $('#copyPromptBtn').onclick=async()=>{ if(!state.result) return; if(await copyText(state.result.prompt)) toast('Repair prompt copied'); else toast('Copy failed — select the prompt manually'); };
+  $('#downloadPromptBtn').onclick=()=>{ if(!state.result)return; downloadText('orion-repair-instructions.txt',state.result.prompt); };
+  $('#downloadReportBtn').onclick=()=>{ if(!state.result)return; const report=makeReport(); downloadText('orion-security-report.json',JSON.stringify(report,null,2)); };
+  $('#copySummaryBtn').onclick=async()=>{ if(!state.result)return; const s=summaryText(); if(await copyText(s)) toast('Summary copied'); else toast('Copy failed — select the summary manually'); };
+  $('#filters').addEventListener('click',e=>{ const b=e.target.closest('.filter'); if(!b)return; state.filter=b.dataset.filter; document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b)); renderFindings(); });
+
+  async function handleFiles(rawFiles){
+    if(!rawFiles.length){toast('No files selected');return;}
+    // V1 stays local-first. The browser handles file/folder selection; Orion only analyzes readable source/config text.
+    try {
+      const expanded=[];
+      for(const f of rawFiles){
+        if(/\.zip$/i.test(f.name)) {
+          expanded.push(...await readZip(f));
+          continue;
+        }
+        const ext=(f.name.toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
+        if(OrionEngine.SKIP_EXT.has(ext)) continue;
+        if(f.size>MAX_DIRECT_FILE) { toast(`Skipped ${f.name}: file is larger than ${Math.round(MAX_DIRECT_FILE/1e6)} MB.`); continue; }
+        const head=new Uint8Array(await f.slice(0,4096).arrayBuffer());
+        if(head.includes(0)) continue;
+        expanded.push({path:(f.webkitRelativePath||f.name).replace(/^\/*/,'').replace(/\\/g,'/'),name:f.name,size:f.size,text: await f.text()});
+      }
+      state.files=OrionEngine.canonicalizeFiles(expanded.filter(f=>f.path && !f.path.endsWith('/')));
+      state.projectName = state.files[0]?.path?.split('/')[0] || 'Website project';
+      prepareScan();
+      await runScan();
+    } catch(err){ console.error(err); toast(`Could not read files: ${err.message}`); }
+  }
+
+
+  async function collectDroppedFiles(dataTransfer){
+    const items=[...(dataTransfer?.items||[])];
+    const entries=[];
+    for(const item of items){
+      if(item.kind!=='file') continue;
+      const entry=item.webkitGetAsEntry?.();
+      if(entry) entries.push(entry);
+    }
+    if(!entries.length) return [...(dataTransfer?.files||[])];
+
+    const files=[];
+    async function walk(entry, prefix=''){
+      if(entry.isFile){
+        await new Promise((resolve,reject)=>entry.file(file=>{
+          try{
+            Object.defineProperty(file,'webkitRelativePath',{value:`${prefix}${file.name}`,configurable:true});
+          }catch(e){}
+          files.push(file); resolve();
+        },reject));
+        return;
+      }
+      if(entry.isDirectory){
+        const reader=entry.createReader();
+        const children=[];
+        while(true){
+          const batch=await new Promise((resolve,reject)=>reader.readEntries(resolve,reject));
+          if(!batch.length) break;
+          children.push(...batch);
+        }
+        for(const child of children) await walk(child, `${prefix}${entry.name}/`);
+      }
+    }
+    for(const entry of entries) await walk(entry,'');
+    return files;
+  }
+
+  async function readZip(file){
+    const buffer=await file.arrayBuffer(); const view=new DataView(buffer); const bytes=new Uint8Array(buffer);
+    const findSig=(sig,start,end)=>{ for(let i=end-4;i>=start;i--){ if(view.getUint32(i,true)===sig)return i;} return -1; };
+    const eocd=findSig(0x06054b50,Math.max(0,bytes.length-0xFFFF-22),bytes.length);
+    if(eocd<0) throw new Error('ZIP end record not found');
+    const cdSize=view.getUint32(eocd+12,true), cdOffset=view.getUint32(eocd+16,true); let p=cdOffset; const out=[];
+    const decoder=new TextDecoder(); let totalUncompressed=0;
+    const entryCount=view.getUint16(eocd+10,true);
+    if(entryCount>MAX_ZIP_FILES) throw new Error(`ZIP contains too many entries (${entryCount}); limit is ${MAX_ZIP_FILES}.`);
+    for(let i=0;i<entryCount;i++){
+      if(view.getUint32(p,true)!==0x02014b50) break;
+      const method=view.getUint16(p+10,true), compSize=view.getUint32(p+20,true), uncomp=view.getUint32(p+24,true), nameLen=view.getUint16(p+28,true), extraLen=view.getUint16(p+30,true), commentLen=view.getUint16(p+32,true), localOffset=view.getUint32(p+42,true);
+      const name=decoder.decode(bytes.slice(p+46,p+46+nameLen)); p += 46+nameLen+extraLen+commentLen;
+      if(name.endsWith('/')) continue;
+      if(uncomp>MAX_ZIP_ENTRY) continue;
+      totalUncompressed += uncomp;
+      if(totalUncompressed>MAX_ZIP_TOTAL) throw new Error(`ZIP expands beyond the ${Math.round(MAX_ZIP_TOTAL/1e6)} MB analysis limit.`);
+      const lp=localOffset; const nlen=view.getUint16(lp+26,true), xlen=view.getUint16(lp+28,true); const start=lp+30+nlen+xlen;
+      const comp=bytes.slice(start,start+compSize);
+      let data;
+      if(method===0){data=comp;}
+      else if(method===8){const ds=new DecompressionStream('deflate-raw'); data=new Uint8Array(await new Response(new Blob([comp]).stream().pipeThrough(ds)).arrayBuffer());}
+      else continue;
+      const ext=(name.toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
+      if(OrionEngine.SKIP_EXT.has(ext)) continue;
+      if(/\x00/.test(new TextDecoder().decode(data.slice(0,Math.min(data.length,4096))))) continue;
+      out.push({path:name.replace(/\\/g,'/'),name:name.split('/').pop(),size:uncomp,text:new TextDecoder('utf-8',{fatal:false}).decode(data)});
+    }
+    return out;
+  }
+  const MAX_DIRECT_FILE=5_000_000; const MAX_ZIP_ENTRY=3_000_000; const MAX_ZIP_FILES=1200; const MAX_ZIP_TOTAL=30_000_000;
+
+  function prepareScan(){
+    $('#scanPanel').classList.remove('hidden');
+    $('#projectName').textContent=state.projectName;
+    $('#metricFiles').textContent=state.files.length;
+    $('#metricFilesHint').textContent=`${state.files.filter(f=>OrionEngine.TEXT_EXT.has((f.path.match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase())).length} readable source`;
+    $('#metricRules').textContent=OrionEngine.RULES.length;
+    $('#scanState').textContent='QUEUED';
+    $('#progressFill').style.width='0%'; $('#progressPct').textContent='0%'; $('#progressText').textContent='Ready to scan';
+  }
+
+  async function runScan(){
+    $('#scanState').textContent='SCANNING';
+    const result=await OrionEngine.scan(state.files, ({processed,total,file})=>{
+      const pct=total?Math.round(processed/total*100):100; $('#progressFill').style.width=`${pct}%`; $('#progressPct').textContent=`${pct}%`; $('#progressText').textContent=`Analyzing ${file?.path||'files'} · ${processed}/${total}`;
+    });
+    result.prompt=OrionEngine.compilePrompt(state.projectName,result.findings,result.files);
+    state.result=result;
+    $('#scanState').textContent='COMPLETE';
+    const confirmed = result.findings.filter(f=>!f.advisory);
+    const reviews = result.findings.filter(f=>f.advisory);
+    $('#metricFindings').textContent=confirmed.length;
+    $('#metricFindingsHint').textContent=confirmed.length ? `${reviews.length ? `${reviews.length} review item${reviews.length===1?'':'s'} · ` : ''}${confirmed.filter(f=>f.severity==='critical'||f.severity==='high').length} important or urgent` : (reviews.length ? `${reviews.length} review item${reviews.length===1?'':'s'} · no confirmed problems` : 'no problems found');
+    $('#metricScore').textContent=result.score;
+    updatePlainSummary(result);
+    $('#copyPromptBtn').disabled=false; $('#downloadPromptBtn').disabled=false; $('#downloadReportBtn').disabled=false; $('#copySummaryBtn').classList.remove('hidden');
+    $('#promptOutput').textContent=result.prompt;
+    renderFindings();
+    $('#scanPanel').scrollIntoView({behavior:'smooth',block:'start'});
+    toast(result.findings.length ? `Scan complete · ${result.findings.length} findings` : 'Scan complete · no matches');
+  }
+
+  function renderFindings(){
+    const list=$('#findingList'); if(!state.result){ return; }
+    const rows=state.result.findings.filter(f=>state.filter==='all'||(state.filter==='advisory'?f.advisory:f.severity===state.filter));
+    list.innerHTML='';
+    if(!rows.length){ list.innerHTML='<div class="empty-state"><span class="empty-line"></span><span>No findings in this filter.</span></div>'; return; }
+    rows.forEach((f,i)=>{
+      const article=document.createElement('article');
+      article.className=`finding-item severity-${f.severity}`;
+      const number=document.createElement('div'); number.className='finding-number'; number.textContent=String(i+1).padStart(2,'0');
+      const body=document.createElement('div'); body.className='finding-body';
+      const head=document.createElement('div'); head.className='finding-head';
+      const title=document.createElement('h4'); title.textContent=humanSentence(f);
+      const severity=document.createElement('span'); severity.className=`finding-severity ${f.severity}`; severity.textContent=f.advisory?'REVIEW ITEM':severityLabel(f.severity);
+      if (f.advisory) severity.classList.add('advisory');
+      head.append(title,severity);
+
+      const why=document.createElement('p'); why.className='finding-copy'; why.textContent=f.plainWhy||f.reason||'Orion found a pattern that deserves a closer security check.';
+      const where=document.createElement('p'); where.className='finding-where';
+      const location = `Found in <code>${escapeHtml(f.file)}</code>${Number.isFinite(Number(f.line))?` at line ${escapeHtml(f.line)}`:''}.`;
+      const repeats = f.occurrences && f.occurrences.length>1 ? ` <span class="finding-repeat">Same pattern also seen ${f.occurrences.length-1} more time${f.occurrences.length-1===1?'':'s'}.</span>` : '';
+      where.innerHTML=location+repeats;
+      const fix=document.createElement('p'); fix.className='finding-fix'; fix.innerHTML=`<strong>What to do:</strong> ${escapeHtml(f.plainFix||f.fix||'Review this area and remove the unsafe behavior without changing unrelated functionality.')}`;
+
+      const details=document.createElement('details'); details.className='finding-technical';
+      const summary=document.createElement('summary'); summary.textContent='Technical details';
+      const tech=document.createElement('div'); tech.className='technical-inline';
+      tech.innerHTML=`<div><strong>Rule</strong> ${escapeHtml(f.id||'—')}</div><div><strong>Confidence</strong> ${escapeHtml(f.confidence||'—')}</div><div><strong>OWASP</strong> ${escapeHtml(f.owasp||'—')}</div><div><strong>CWE</strong> ${escapeHtml(f.cwe||'—')}</div><pre>${escapeHtml(f.evidence||'No evidence captured.')}</pre>`;
+      details.append(summary,tech);
+      body.append(head,why,where,fix,details);
+      article.append(number,body);
+      list.appendChild(article);
+    });
+  }
+  function humanSentence(f){
+    const map={
+      'Potential DOM XSS sink':'Your page puts data from the app directly into HTML without proving that it is safe.',
+      'Session identifier appears in a URL parameter':'Your site puts a session ID into a web address instead of keeping it out of the URL.',
+      'Original filename used directly in storage path':'Your server uses part of an uploaded filename when creating the stored file path.',
+      'Potentially missing Content-Security-Policy':'Your deployment does not appear to tell the browser which scripts and resources are allowed to run.',
+      'Potentially missing referrer policy':'Your deployment does not appear to limit how much page-address information is sent to other sites.',
+      'Potentially missing frame-embedding protection':'Your site does not appear to prevent other sites from embedding its pages in a frame.',
+      'Potentially missing MIME-sniffing protection':'Your deployment does not appear to tell browsers not to guess a file type.',
+      'Cross-Origin-Opener-Policy not evident':'Your site does not appear to use an optional browser isolation setting.',
+      'Cross-Origin-Embedder-Policy not evident':'Your site does not appear to use an optional cross-origin isolation setting.'
+    };
+    return map[f.title] || f.plainTitle || f.title || 'Orion found a security issue that needs review.';
+  }
+  function severityLabel(s){ return ({critical:'Needs urgent action',high:'Important',medium:'Should fix',low:'Worth checking'})[s] || 'Review'; }
+  function detailIntro(f){
+    if(f.severity==='critical') return 'This is the first thing to deal with because it could expose or seriously compromise the app.';
+    if(f.severity==='high') return 'This is an important security problem and should be fixed before treating the site as ready.';
+    if(f.severity==='medium') return 'This is not necessarily an active break-in, but it creates a weakness worth fixing.';
+    return 'This is a smaller hardening or review item. It may not be a direct vulnerability on its own.';
+  }
+  function summaryText(){ const r=state.result; const confirmed=r.findings.filter(f=>!f.advisory), reviews=r.findings.filter(f=>f.advisory); const urgent=confirmed.filter(f=>f.severity==='critical').length, important=confirmed.filter(f=>f.severity==='high').length; return `ORION security check\nProject: ${state.projectName}\nSecurity score: ${r.score}/100\nConfirmed security issues: ${confirmed.length}\nReview items: ${reviews.length}\nNeeds urgent action: ${urgent}\nImportant: ${important}\n\n${r.findings.map(f=>`- ${f.plainTitle||f.title} (${f.advisory?'Review item':severityLabel(f.severity)})\n  ${f.plainWhy||f.reason}\n  File: ${f.file}, line ${f.line}`).join('\n')}`; }
+  function makeReport(){ return {product:'ORION',version:1,project:state.projectName,generatedAt:new Date().toISOString(),scope:'local static analysis',limitations:'This is not a guarantee of security or legal compliance and does not replace dynamic testing or expert review.',rulesLoaded:OrionEngine.RULES.length,score:state.result.score,profile:state.result.profile,files:state.result.files,findings:state.result.findings}; }
+
+  function updatePlainSummary(result){
+    const urgent=result.findings.filter(f=>f.severity==='critical').length;
+    const important=result.findings.filter(f=>f.severity==='high').length;
+    const medium=result.findings.filter(f=>f.severity==='medium').length;
+    const title=$('#plainSummaryTitle'); const copy=$('#plainSummaryCopy');
+    if(!result.findings.length){
+      title.textContent='Nothing obvious was found.';
+      copy.textContent='That is a good sign, but it does not prove the website is completely secure. Dynamic testing and expert review can still find things static analysis cannot.';
+      return;
+    }
+    const confirmed=result.findings.filter(f=>!f.advisory);
+    const reviews=result.findings.filter(f=>f.advisory);
+    const first=confirmed[0] || result.findings[0];
+    if(!confirmed.length){
+      title.textContent=`No confirmed security problems were found.`;
+      copy.textContent=`Orion did find ${reviews.length} review item${reviews.length===1?'':'s'} that should be checked in your real deployment or application flow. These are not counted as confirmed vulnerabilities.`;
+      return;
+    }
+    title.textContent=`Orion found ${confirmed.length} ${confirmed.length===1?'security issue':'security issues'} worth fixing${reviews.length?` and ${reviews.length} review item${reviews.length===1?'':'s'}`:''}.`;
+    const lead=[];
+    if(urgent) lead.push(`${urgent} ${urgent===1?'needs':'need'} urgent action`);
+    if(important) lead.push(`${important} ${important===1?'is':'are'} important`);
+    if(medium) lead.push(`${medium} ${medium===1?'should':'should'} be fixed`);
+    copy.textContent=`Start with “${first.plainTitle||first.title}”. ${lead.join(', ')}${lead.length?', and':''} every issue is explained below in normal language.`;
+  }
+
+  async function copyText(text){
+    try { if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); return true; } } catch(e){}
+    const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    let ok=false; try{ok=document.execCommand('copy');}catch(e){} ta.remove(); return ok;
+  }
+  function downloadText(name,text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  let toastTimer; function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2200);}
+})();

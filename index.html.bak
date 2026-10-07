@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="A local-first website security intent engine that finds risky code and compiles repair instructions." />
+  <title>ORION — Security Intent Engine</title>
+  <link rel="icon" href="orion-mark.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand" aria-label="ORION Security Intent Engine">
+      <div class="brand-mark" id="brandMark" aria-hidden="true"><img src="orion-mark.svg" alt="" /></div>
+      <div>
+        <div class="brand-name">ORION</div>
+        <div class="brand-sub">SECURITY INTENT ENGINE</div>
+      </div>
+    </div>
+    <div class="top-status">
+      <span class="status-dot"></span>
+      <span>LOCAL · NO UPLOAD</span>
+      <span class="status-divider"></span>
+      <span id="engineCount">0 rules loaded</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero" id="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">CODE IN. RISK OUT.</p>
+        <h1>Make your website harder to break.</h1>
+        <p class="lede">Drop the project files. Orion reads the project, looks for risky patterns, explains each problem in plain English, and gives you clear repair instructions.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="chooseBtn">Choose files or ZIP</button>
+          <button class="btn btn-ghost" id="folderBtn">Choose folder</button>
+          <button class="btn btn-ghost" id="demoBtn">Load test project</button>
+          <input id="fileInput" type="file" hidden multiple />
+          <input id="folderInput" type="file" hidden multiple webkitdirectory directory />
+        </div>
+        <div class="trust-row">
+          <span>NO SERVER STORAGE</span>
+          <span>PATTERN FIRST</span>
+          <span>REPAIR INSTRUCTIONS</span>
+        </div>
+      </div>
+
+      <div class="scene-wrap" id="sceneWrap" aria-label="Interactive 3D security core">
+        <div class="scene-hint">DRAG TO ROTATE</div>
+        <div class="scene">
+          <div class="core" id="core">
+            <div class="core-face front">O</div>
+            <div class="core-face back">R</div>
+            <div class="core-face right">I</div>
+            <div class="core-face left">N</div>
+            <div class="core-face top">//</div>
+            <div class="core-face bottom">ON</div>
+          </div>
+          <div class="orbit orbit-a"></div>
+          <div class="orbit orbit-b"></div>
+          <div class="orbit orbit-c"></div>
+          <div class="particle p1"></div><div class="particle p2"></div><div class="particle p3"></div><div class="particle p4"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="drop-zone" id="dropZone" tabindex="0" aria-label="Drop website files here">
+      <div class="drop-icon" aria-hidden="true"><img src="orion-mark.svg" alt="" /></div>
+      <div class="drop-title">Drop your website here</div>
+      <div class="drop-meta">Drop a folder, several files, or a .zip archive. Your source stays in this browser for V1.</div>
+      <div class="drop-sub">Source and configuration files are analyzed automatically. Media, fonts, and other binary assets are ignored.</div>
+    </section>
+
+    <section class="scan-panel hidden" id="scanPanel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">SECURITY CHECK</p>
+          <h2 id="projectName">Untitled project</h2>
+        </div>
+        <div class="scan-state" id="scanState">READY</div>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="metric-card"><span>Files</span><strong id="metricFiles">0</strong><small id="metricFilesHint">source files</small></div>
+        <div class="metric-card"><span>Checks</span><strong id="metricRules">0</strong><small>security checks</small></div>
+        <div class="metric-card"><span>Problems</span><strong id="metricFindings">0</strong><small id="metricFindingsHint">waiting</small></div>
+        <div class="metric-card"><span>Security score</span><strong id="metricScore">—</strong><small>higher is better</small></div>
+      </div>
+
+      <section class="plain-summary" id="plainSummary" aria-live="polite">
+        <div class="plain-summary-mark" aria-hidden="true"></div>
+        <div>
+          <div class="plain-summary-kicker">AT A GLANCE</div>
+          <div class="plain-summary-title" id="plainSummaryTitle">Orion is ready.</div>
+          <div class="plain-summary-copy" id="plainSummaryCopy">We will explain every problem in normal language and show where it came from.</div>
+        </div>
+      </section>
+
+      <div class="scan-progress-wrap">
+        <div class="progress-label"><span id="progressText">Ready to scan</span><span id="progressPct">0%</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <section class="findings-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">WHAT ORION FOUND</p>
+            <h3>Problems, explained like a human.</h3>
+            <p>Each item tells you what is wrong, why it matters, and what should change. No security vocabulary required.</p>
+          </div>
+          <button class="text-btn hidden" id="copySummaryBtn">Copy summary</button>
+        </div>
+        <div class="filters" id="filters">
+          <button class="filter active" data-filter="all">All</button>
+          <button class="filter" data-filter="critical">Urgent</button>
+          <button class="filter" data-filter="high">Important</button>
+          <button class="filter" data-filter="medium">Fix</button>
+          <button class="filter" data-filter="low">Check</button>
+          <button class="filter" data-filter="advisory">Review</button>
+        </div>
+        <div class="finding-list" id="findingList">
+          <div class="empty-state"><span class="empty-line"></span><span>No scan yet.</span></div>
+        </div>
+      </section>
+
+      <section class="prompt-card">
+        <div class="card-head">
+          <div><h3>Repair instructions</h3><p>Optional: Orion can write the exact instructions for Claude, Kimi, or another coding agent. You do not need to understand the security terms first.</p></div>
+          <div class="prompt-actions">
+            <button class="text-btn" id="copyPromptBtn" disabled>Copy prompt</button>
+            <button class="btn btn-primary btn-small" id="downloadPromptBtn" disabled>Save instructions</button>
+          </div>
+        </div>
+        <pre id="promptOutput" class="prompt-output">Run a scan to generate repair instructions.</pre>
+      </section>
+
+      <div class="footer-actions">
+        <button class="btn btn-ghost" id="downloadReportBtn" disabled>Save security report</button>
+        <button class="btn btn-ghost" id="resetBtn">Start another scan</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="knowledge.js"></script>
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

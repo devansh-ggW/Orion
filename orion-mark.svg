@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Orion">
+  <defs>
+    <linearGradient id="g" x1="12" y1="16" x2="112" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8f6cff"/>
+      <stop offset=".5" stop-color="#f4f1ff"/>
+      <stop offset="1" stop-color="#ff5c6f"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="#0b0b10"/>
+  <g filter="url(#glow)">
+    <ellipse cx="64" cy="64" rx="42" ry="19" fill="none" stroke="url(#g)" stroke-width="4" transform="rotate(-28 64 64)" opacity=".82"/>
+    <ellipse cx="64" cy="64" rx="42" ry="19" fill="none" stroke="url(#g)" stroke-width="2" transform="rotate(62 64 64)" opacity=".62"/>
+    <circle cx="64" cy="64" r="23" fill="#101017" stroke="url(#g)" stroke-width="4"/>
+    <path d="M54 80V48h18.5c7.7 0 12.5 4.5 12.5 10.8 0 4.8-2.6 8-6.4 9.9L87 80H77l-6.4-9.1h-7.1V80H54Zm9.5-16h8c3.1 0 5.2-1.8 5.2-4.5S74.6 55 71.5 55h-8v9Z" fill="#f4f1ff"/>
+    <circle cx="101" cy="28" r="3" fill="#ff6678"/>
+    <circle cx="27" cy="96" r="2.5" fill="#9f7aff"/>
+  </g>
+</svg>
