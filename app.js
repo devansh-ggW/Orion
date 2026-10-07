@@ -5,35 +5,48 @@
   engineCount.textContent = `${OrionEngine.RULES.length} checks loaded`;
 
   const sceneWrap=$('#sceneWrap'), scene=$('.scene'), core=$('#core');
-  let dragging=false, lastX=0,lastY=0, rotX=-7, rotY=0, raf=0, targetPX=0, targetPY=0, currentPX=0, currentPY=0, sceneRect=null, sceneActive=false;
-  const updateSceneRect=()=>{ sceneRect=sceneWrap.getBoundingClientRect(); };
-  window.addEventListener('resize', updateSceneRect, {passive:true});
-  updateSceneRect();
+  let dragging=false, lastX=0,lastY=0, rotX=-7, rotY=0, frame=0, tiltX=0, tiltY=0, sceneRect=null;
   const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  function requestSceneFrame(){
-    if(reducedMotion || !sceneActive) return;
-    if(raf) return;
-    raf=requestAnimationFrame(()=>{
-      raf=0;
-      currentPX += (targetPX-currentPX)*.18; currentPY += (targetPY-currentPY)*.18;
-      const sx=rotX-currentPY, sy=rotY+currentPX;
-      scene.style.transform=`rotateX(${sx}deg) rotateY(${sy}deg) translateZ(0)`;
-      if(Math.abs(targetPX-currentPX)>.1 || Math.abs(targetPY-currentPY)>.1 || dragging) requestSceneFrame(); else if(!sceneWrap.matches(':hover')) sceneActive=false;
-    });
-  }
-  sceneWrap.addEventListener('pointerenter',()=>{updateSceneRect();if(reducedMotion)return;sceneActive=true;sceneWrap.classList.add('is-hovered');requestSceneFrame();});
-  sceneWrap.addEventListener('pointerleave',()=>{ if(dragging)return; targetPX=0; targetPY=0; sceneWrap.classList.remove('is-hovered'); requestSceneFrame(); });
+  const updateSceneRect=()=>{ sceneRect=sceneWrap.getBoundingClientRect(); };
+  const renderScene=()=>{
+    frame=0;
+    if(reducedMotion) return;
+    scene.style.transform=`translate3d(0,0,0) rotateX(${rotX-tiltY}deg) rotateY(${rotY+tiltX}deg)`;
+  };
+  const scheduleScene=()=>{
+    if(reducedMotion || frame) return;
+    frame=requestAnimationFrame(renderScene);
+  };
+  updateSceneRect();
+  window.addEventListener('resize',updateSceneRect,{passive:true});
+  sceneWrap.addEventListener('pointerenter',()=>{updateSceneRect();sceneWrap.classList.add('is-hovered');});
+  sceneWrap.addEventListener('pointerleave',()=>{
+    if(dragging) return;
+    tiltX=0; tiltY=0; sceneWrap.classList.remove('is-hovered'); scheduleScene();
+  });
   sceneWrap.addEventListener('pointermove',e=>{
     const rect=sceneRect || sceneWrap.getBoundingClientRect();
-    const nx=((e.clientX-rect.left)/rect.width-.5); const ny=((e.clientY-rect.top)/rect.height-.5);
-    if(dragging){ rotY += (e.clientX-lastX)*.32; rotX -= (e.clientY-lastY)*.24; lastX=e.clientX; lastY=e.clientY; }
-    if(!reducedMotion){ targetPX=nx*22; targetPY=ny*18; }
-    requestSceneFrame();
+    const nx=((e.clientX-rect.left)/Math.max(rect.width,1)-.5);
+    const ny=((e.clientY-rect.top)/Math.max(rect.height,1)-.5);
+    if(dragging){
+      rotY += (e.clientX-lastX)*.24;
+      rotX -= (e.clientY-lastY)*.18;
+      lastX=e.clientX; lastY=e.clientY;
+    }
+    tiltX=nx*14; tiltY=ny*10;
+    scheduleScene();
   },{passive:true});
-  sceneWrap.addEventListener('pointerdown',e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; sceneWrap.setPointerCapture?.(e.pointerId); sceneWrap.classList.add('is-dragging'); });
-  sceneWrap.addEventListener('pointerup',()=>{dragging=false;sceneWrap.classList.remove('is-dragging');requestSceneFrame();});
-  sceneWrap.addEventListener('pointercancel',()=>{dragging=false;sceneWrap.classList.remove('is-dragging');requestSceneFrame();});
-
+  sceneWrap.addEventListener('pointerdown',e=>{
+    dragging=true; lastX=e.clientX; lastY=e.clientY;
+    sceneWrap.setPointerCapture?.(e.pointerId);
+    sceneWrap.classList.add('is-dragging');
+  });
+  sceneWrap.addEventListener('pointerup',e=>{
+    dragging=false; sceneWrap.classList.remove('is-dragging');
+    try{sceneWrap.releasePointerCapture?.(e.pointerId);}catch(_){}
+    scheduleScene();
+  });
+  sceneWrap.addEventListener('pointercancel',()=>{dragging=false;sceneWrap.classList.remove('is-dragging');scheduleScene();});
 
   const dropZone = $('#dropZone'); const fileInput=$('#fileInput'); const folderInput=$('#folderInput');
   function openPicker(input){
