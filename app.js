@@ -256,6 +256,7 @@
 
   async function runScan(){
     setScanBusy(true);
+    try{
     $('#scanState').textContent='SCANNING';
     $('#promptCard').classList.add('hidden');
     $('#copyPromptBtn').disabled=true; $('#downloadPromptBtn').disabled=true;
@@ -296,7 +297,8 @@
     setProgress(100,'Analysis complete');
     $('#scanPanel').scrollIntoView({behavior:'auto',block:'start'});
     toast(result.findings.length ? `Scan complete · ${result.findings.length} findings` : 'Scan complete · no matches');
-    setScanBusy(false);
+    }
+    finally { setScanBusy(false); }
   }
 
   function renderPromptDocument(prompt){
