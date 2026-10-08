@@ -246,7 +246,12 @@
     'BROWSER': {owasp:'A05:2025 Injection', cwe:'CWE-79'},
     'CONFIG': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-16'},
     'DATA': {owasp:'A01:2025 Broken Access Control', cwe:'CWE-200'},
-    'OBS': {owasp:'A09:2025 Security Logging & Alerting Failures', cwe:'CWE-778'}
+    'OBS': {owasp:'A09:2025 Security Logging & Alerting Failures', cwe:'CWE-778'},
+    'DESER': {owasp:'A08:2025 Software or Data Integrity Failures', cwe:'CWE-502'},
+    'XXE': {owasp:'A05:2025 Injection', cwe:'CWE-611'},
+    'CACHE': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-525'},
+    'LOG': {owasp:'A09:2025 Security Logging & Alerting Failures', cwe:'CWE-532'},
+    'PRIV': {owasp:'Privacy readiness / context dependent', cwe:'Context dependent'}
   };
 
   function enrich(f) {
@@ -414,7 +419,12 @@
     'BROWSER': 'A browser capability or data flow may cross a trust boundary.',
     'CONFIG': 'A framework or deployment setting may weaken the security boundary.',
     'DATA': 'The API or application may expose more internal data than intended.',
-    'OBS': 'Logs or telemetry may contain information that should stay protected.'
+    'OBS': 'Logs or telemetry may contain information that should stay protected.',
+    'DESER': 'Serialized data may cross a trust boundary in a risky format.',
+    'XXE': 'XML parsing settings may expose external resources to untrusted documents.',
+    'CACHE': 'Caching behavior may cross user or trust boundaries.',
+    'LOG': 'Application logs may capture credentials or private request data.',
+    'PRIV': 'Telemetry or stored data may include more personal information than necessary.'
   };
 
   function knowledgeFor(f) {
