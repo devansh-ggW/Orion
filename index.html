@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="A local-first website security intent engine that finds risky code and compiles repair instructions." />
+  <meta name="description" content="A deterministic website security intent engine that finds risky code and compiles repair instructions." />
   <title>ORION — Security Intent Engine</title>
   <link rel="icon" href="orion-favicon-64.png?v=3" type="image/png" sizes="64x64" />
   <link rel="icon" href="orion-favicon-256.png?v=3" type="image/png" sizes="256x256" />
@@ -55,7 +55,6 @@
           <input id="addFolderInput" type="file" hidden multiple webkitdirectory directory />
         </div>
         <div class="trust-row">
-          <span>NO SERVER STORAGE</span>
           <span>PATTERN FIRST</span>
           <span>REPAIR INSTRUCTIONS</span>
         </div>
@@ -83,7 +82,7 @@
     <section class="drop-zone" id="dropZone" tabindex="0" aria-label="Drop website files here">
       <div class="drop-icon" aria-hidden="true"><img src="orion-icon.webp" alt="" /></div>
       <div class="drop-title">Drop your website here</div>
-      <div class="drop-meta">Drop a folder, several files, or a .zip archive. Your source stays in this browser for V1.</div>
+      <div class="drop-meta">Drop a folder, several files, or a .zip archive.</div>
       <div class="drop-sub">Source and configuration files are analyzed automatically. Media, fonts, and other binary assets are ignored.</div>
     </section>
 
