@@ -271,7 +271,7 @@
 
     setProgress(95,'All files checked. Correlating related findings…');
     await new Promise(r=>setTimeout(r,0));
-    setProgress(97,'Compiling plain-English repair instructions…');
+    setProgress(97,'Compiling repair instructions…');
     result.prompt=OrionEngine.compilePrompt(state.projectName,result.findings,result.files,result.intelligence);
     await new Promise(r=>setTimeout(r,0));
     setProgress(98,'Preparing the security report…');
@@ -402,7 +402,7 @@
     return 'This is a smaller hardening or review item. It may not be a direct vulnerability on its own.';
   }
   function summaryText(){ const r=state.result; const confirmed=r.findings.filter(f=>!f.advisory), reviews=r.findings.filter(f=>f.advisory); const urgent=confirmed.filter(f=>f.severity==='critical').length, important=confirmed.filter(f=>f.severity==='high').length; return `ORION security check\nProject: ${state.projectName}\nSecurity score: ${r.score}/100\nConfirmed security issues: ${confirmed.length}\nReview items: ${reviews.length}\nNeeds urgent action: ${urgent}\nImportant: ${important}\n\n${r.findings.map(f=>`- ${f.plainTitle||f.title} (${f.advisory?'Review item':severityLabel(f.severity)})\n  ${f.plainWhy||f.reason}\n  File: ${f.file}, line ${f.line}`).join('\n')}`; }
-  function makeReport(){ return {product:'ORION',version:1,project:state.projectName,generatedAt:new Date().toISOString(),scope:'local static analysis',limitations:'This is not a guarantee of security or legal compliance and does not replace dynamic testing or expert review.',rulesLoaded:OrionEngine.RULES.length,score:state.result.score,profile:state.result.profile,intelligence:state.result.intelligence || null,files:state.result.files,findings:state.result.findings}; }
+  function makeReport(){ return {product:'ORION',version:1,project:state.projectName,generatedAt:new Date().toISOString(),scope:'browser static analysis',limitations:'This is not a guarantee of security or legal compliance and does not replace dynamic testing or expert review.',rulesLoaded:OrionEngine.RULES.length,score:state.result.score,profile:state.result.profile,intelligence:state.result.intelligence || null,files:state.result.files,findings:state.result.findings}; }
 
   function updatePlainSummary(result){
     const urgent=result.findings.filter(f=>f.severity==='critical').length;
@@ -429,7 +429,7 @@
     if(important) lead.push(`${important} ${important===1?'is':'are'} important`);
     if(medium) lead.push(`${medium} ${medium===1?'should':'should'} be fixed`);
     const intelligenceHint=result.intelligence ? ` Orion also mapped ${result.intelligence.trustSources?.length||0} trust-source signals and ${result.intelligence.safeBoundaries?.length||0} safety boundaries before ranking these results.` : '';
-    copy.textContent=`Start with “${first.plainTitle||first.title}”. ${lead.join(', ')}${lead.length?', and':''} every issue is explained below in normal language.${stackHint}${intelligenceHint}`;
+    copy.textContent=`Start with “${first.plainTitle||first.title}”. ${lead.join(', ')}${lead.length?', and':''} every issue is explained below.${stackHint}${intelligenceHint}`;
   }
 
   function makeSarif(){
