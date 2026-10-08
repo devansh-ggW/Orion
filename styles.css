@@ -580,3 +580,20 @@ html,body{overscroll-behavior-x:none;}
   .top-nav a{transition:none !important;}
   .scene{transform:none !important;}
 }
+
+
+/* Orion convenience controls — lightweight, no blur/backdrop/large animation surfaces. */
+.panel-head-actions{display:flex;align-items:center;gap:10px}
+.picker-menu{position:fixed;z-index:120;min-width:170px;background:#f7f8fa;border:1px solid rgba(18,20,26,.16);padding:5px;box-shadow:0 12px 28px rgba(0,0,0,.14)}
+.picker-menu button{display:block;width:100%;border:0;background:transparent;color:#1b1e27;text-align:left;padding:10px 11px;font-size:11px}
+.picker-menu button:hover,.picker-menu button:focus-visible{background:#e9eaf0;outline:none}
+.finding-tools{display:flex;align-items:center;gap:8px;padding:10px 0 12px;border-bottom:1px solid var(--line)}
+.finding-search{display:block;flex:1;min-width:0}
+.finding-search input{width:100%;height:36px;border:1px solid var(--line-strong);background:#f8f9fb;color:#20232b;padding:0 11px;font-size:11px;outline:none}
+.finding-search input:focus{border-color:rgba(113,83,214,.55)}
+.finding-search input::placeholder{color:#8a8f99}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.finding-overflow{display:flex;justify-content:center;padding-top:14px}
+.see-all-btn{border:1px solid var(--line-strong);background:transparent;color:var(--muted);padding:9px 13px;font-size:10px;letter-spacing:.08em}
+.see-all-btn:hover{color:var(--text);border-color:rgba(113,83,214,.45)}
+@media (max-width:620px){.panel-head-actions{gap:7px}.panel-head-actions .text-btn{font-size:10px}.finding-tools{padding-top:8px}.footer-actions{flex-wrap:wrap;justify-content:stretch}.footer-actions-buttons{width:100%;display:flex;flex-wrap:wrap;gap:8px}.footer-actions-buttons .btn{flex:1}}
