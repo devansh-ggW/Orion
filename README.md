@@ -12,7 +12,7 @@ Open `index.html` directly in a modern Chromium browser, or serve the folder wit
 - ZIP upload with a browser-side ZIP reader
 - ZIP entry-count and expanded-size guards
 - Local source/config filtering
-- 109 deterministic security/privacy/configuration rules
+- 789 deterministic security/privacy/configuration checks
 - Separate versioned `knowledge.js` pack for plain-English findings, trust-boundary teaching patterns, safe-pattern signals, repair playbooks, verification instructions, and prompt composition rules
 - Source-to-sink checks for selected data-flow patterns
 - Framework-aware XSS checks for React, Vue, and Svelte
@@ -70,7 +70,7 @@ The test suite checks rule-pack integrity, vulnerable and safe fixtures, upload 
 - Repair prompts are assembled from rule-specific playbooks rather than a single fixed prompt.
 - Added an Orion SVG identity mark used as the favicon and brand icon.
 - File/ZIP selection and folder selection now use separate real browser inputs.
-- 109 deterministic rules with integrity checks.
+- 789 deterministic rules/checks with integrity checks.
 - Canonicalizes archive roots and removes mirrored duplicate trees.
 - Groups noisy upload-sink findings per file instead of per matched line.
 - Treats filename sanitization signals such as `safe_filename()` / `basename()` as a context boundary for PATH-002.
