@@ -42,11 +42,17 @@
         <h1>Make your website harder to break.</h1>
         <p class="lede">Drop the project files. Orion reads the project, looks for risky patterns, and gives you clear repair instructions.</p>
         <div class="hero-actions">
-          <button class="btn btn-primary" id="chooseBtn">Choose files or ZIP</button>
+          <button class="btn btn-primary" id="chooseBtn" aria-haspopup="menu" aria-expanded="false">Choose files or ZIP</button>
           <button class="btn btn-ghost" id="folderBtn">Choose folder</button>
+          <div class="picker-menu hidden" id="pickerMenu" role="menu" aria-label="Choose project source">
+            <button type="button" role="menuitem" id="pickFilesBtn">Files or ZIP</button>
+            <button type="button" role="menuitem" id="pickFolderBtn">Folder</button>
+          </div>
           <button class="btn btn-ghost" id="demoBtn">Load test project</button>
           <input id="fileInput" type="file" hidden multiple />
           <input id="folderInput" type="file" hidden multiple webkitdirectory directory />
+          <input id="addFilesInput" type="file" hidden multiple />
+          <input id="addFolderInput" type="file" hidden multiple webkitdirectory directory />
         </div>
         <div class="trust-row">
           <span>NO SERVER STORAGE</span>
@@ -87,7 +93,7 @@
           <p class="eyebrow">SECURITY CHECK</p>
           <h2 id="projectName">Untitled project</h2>
         </div>
-        <div class="scan-state" id="scanState">READY</div>
+        <div class="panel-head-actions"><button class="text-btn" id="addMoreBtn">Add more</button><button class="text-btn" id="rescanBtn">Rescan</button><div class="scan-state" id="scanState">READY</div></div>
       </div>
 
       <div class="telemetry-grid">
@@ -120,6 +126,7 @@
           </div>
           <button class="text-btn hidden" id="copySummaryBtn">Copy summary</button>
         </div>
+        <div class="finding-tools"><label class="finding-search"><span class="sr-only">Search findings</span><input id="findingSearch" type="search" placeholder="Search findings, files, rules…" autocomplete="off" /></label><button class="text-btn hidden" id="clearFindingSearch">Clear</button></div>
         <div class="filters" id="filters">
           <button class="filter active" data-filter="all">All</button>
           <button class="filter" data-filter="critical">Urgent</button>
@@ -154,7 +161,7 @@
           <a href="mailto:dewifystores@gmail.com">Support</a>
         </div>
         <div class="footer-actions-buttons">
-          <button class="btn btn-ghost" id="downloadReportBtn" disabled>Save security report</button>
+          <button class="btn btn-ghost" id="downloadReportBtn" disabled>Save security report</button><button class="btn btn-ghost" id="downloadSarifBtn" disabled>Save SARIF</button>
           <button class="btn btn-ghost" id="resetBtn">Start another scan</button>
         </div>
       </div>
@@ -163,6 +170,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="knowledge.js"></script>
+  <script src="pattern-pack.js"></script>
   <script src="engine.js"></script>
   <script src="app.js"></script>
 </body>
