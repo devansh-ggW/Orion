@@ -92,7 +92,7 @@
           <p class="eyebrow">SECURITY CHECK</p>
           <h2 id="projectName">Untitled project</h2>
         </div>
-        <div class="panel-head-actions"><button class="text-btn" id="addMoreBtn">Add more</button><button class="text-btn" id="rescanBtn">Rescan</button><div class="scan-state" id="scanState">READY</div></div>
+        <div class="panel-head-actions"><button class="text-btn" id="addMoreBtn">Add more</button><button class="text-btn" id="rescanBtn">Rescan</button><div class="loaded-status" id="loadedStatus">0 files loaded</div><div class="scan-state" id="scanState">READY</div></div>
       </div>
 
       <div class="telemetry-grid">
@@ -123,7 +123,7 @@
             <h3>What Orion found.</h3>
             <p>Each item shows what was found, why it matters, and what should change.</p>
           </div>
-          <button class="text-btn hidden" id="copySummaryBtn">Copy summary</button>
+          <div class="section-head-actions"><button class="text-btn hidden" id="copyVisibleBtn">Copy visible</button><button class="text-btn hidden" id="copySummaryBtn">Copy summary</button></div>
         </div>
         <div class="finding-tools"><label class="finding-search"><span class="sr-only">Search findings</span><input id="findingSearch" type="search" placeholder="Search findings, files, rules…" autocomplete="off" /></label><button class="text-btn hidden" id="clearFindingSearch">Clear</button></div>
         <div class="filters" id="filters">
