@@ -242,6 +242,11 @@
     $('#progressFill').style.width='0%'; $('#progressPct').textContent='0%'; $('#progressText').textContent='Ready to scan';
   }
 
+  function setScanBusy(busy){
+    ['addMoreBtn','rescanBtn','chooseBtn','folderBtn','demoBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=busy;});
+    if(busy) closePicker();
+  }
+
   function setProgress(pct, text){
     const safe=Math.max(0,Math.min(100,pct));
     $('#progressFill').style.width=`${safe}%`;
@@ -250,6 +255,7 @@
   }
 
   async function runScan(){
+    setScanBusy(true);
     $('#scanState').textContent='SCANNING';
     $('#promptCard').classList.add('hidden');
     $('#copyPromptBtn').disabled=true; $('#downloadPromptBtn').disabled=true;
@@ -290,6 +296,7 @@
     setProgress(100,'Analysis complete');
     $('#scanPanel').scrollIntoView({behavior:'auto',block:'start'});
     toast(result.findings.length ? `Scan complete · ${result.findings.length} findings` : 'Scan complete · no matches');
+    setScanBusy(false);
   }
 
   function renderPromptDocument(prompt){
