@@ -7,6 +7,20 @@
   const SKIP_EXT = new Set(['png','jpg','jpeg','gif','webp','avif','ico','svgz','mp4','webm','mov','mp3','wav','woff','woff2','ttf','otf','eot','pdf','zip','gz','7z','rar','bin','exe','dll']);
   const MAX_TEXT_BYTES = 1_500_000;
   const KNOWLEDGE = window.OrionKnowledge || {};
+  // Merge extra teaching data shipped with the expanded pattern pack.
+  if (window.OrionPatternPack?.KNOWLEDGE) {
+    const pk=window.OrionPatternPack.KNOWLEDGE;
+    const teaching=KNOWLEDGE.teaching=KNOWLEDGE.teaching||{};
+    const p=teaching.patterns=teaching.patterns||{};
+    const mergeList=(key,values)=>{ if(!Array.isArray(values)) return; p[key]=Array.from(new Set([...(p[key]||[]),...values])); };
+    mergeList('browserSources',pk.browserSources);
+    mergeList('serverSources',pk.serverSources);
+    mergeList('dangerousSinks',pk.dangerousSinks);
+    mergeList('safeBoundaries',pk.safeBoundaries);
+    mergeList('antiPatterns',pk.antiPatterns);
+    teaching.frameworks=Object.assign({},teaching.frameworks||{},pk.frameworks||{});
+    teaching.verificationModules=Array.from(new Set([...(teaching.verificationModules||[]),...(pk.verificationModules||[])]));
+  }
 
   const RULES = [
     {id:'JS-EVAL-001',category:'Injection',severity:'high',title:'Dynamic code execution',ext:['js','mjs','cjs','ts','tsx','jsx','vue','svelte'],pattern:/\beval\s*\(|\bnew\s+Function\s*\(/g,reason:'Dynamic code execution can turn attacker-controlled strings into executable JavaScript.',fix:'Replace dynamic execution with explicit data handling or a constrained parser. Preserve behavior without evaluating arbitrary strings.',guard:/trustedInternalExpression|ALLOW_EVAL|eslint-disable.*no-eval/i},
@@ -366,7 +380,24 @@
     'Privacy': 'The site may need clearer explanations or choices around personal data and tracking.',
     'Input Validation': 'The app may accept values without checking that they are the shape it expects.',
     'API Security': 'An API action may not be checking permissions or inputs strongly enough.',
-    'Analysis': 'Orion could not fully inspect this part of the project.'
+    'Analysis': 'Orion could not fully inspect this part of the project.',
+    'XSS': 'Website data may be turning into active browser content.',
+    'PROTO': 'Untrusted object data may be changing how JavaScript objects behave.',
+    'INJECT': 'Input may be changing the meaning of a query, template, or interpreter.',
+    'SQL': 'Input may be changing a database query instead of staying ordinary data.',
+    'CMD': 'Input may be influencing an operating-system command.',
+    'CRYPTO': 'A cryptographic setting or secret deserves a closer security check.',
+    'HEADERS': 'A browser or server security policy may be weaker than intended.',
+    'SUPPLY': 'Build dependencies or installation steps may be changing outside normal review.',
+    'INFRA': 'The deployment configuration may grant more access than the workload needs.',
+    'IAC': 'Infrastructure rules may expose services or grant broader permissions than required.',
+    'CI': 'Build automation may be executing or exposing more than intended.',
+    'API': 'An API boundary may accept more data, access, or work than intended.',
+    'FRAME': 'A framework-specific trust or rendering boundary needs a closer look.',
+    'BROWSER': 'A browser capability or data flow may cross a trust boundary.',
+    'CONFIG': 'A framework or deployment setting may weaken the security boundary.',
+    'DATA': 'The API or application may expose more internal data than intended.',
+    'OBS': 'Logs or telemetry may contain information that should stay protected.'
   };
 
   function knowledgeFor(f) {
@@ -413,7 +444,7 @@
 
   const severityWeight = {critical: 18, high: 9, medium: 4, low: 1};
 
-  function extOf(path) { const m = path.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
+  function extOf(path) { const lower=path.toLowerCase(); if(lower==='dockerfile' || lower.endsWith('/dockerfile')) return 'dockerfile'; if(lower==='makefile' || lower.endsWith('/makefile')) return 'makefile'; const m=lower.match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
   function isTextFile(file) { const ext = extOf(file.name || file.path || ''); return TEXT_EXT.has(ext) && !SKIP_EXT.has(ext); }
   function normalizeText(s) { return s.replace(/\r\n/g,'\n').replace(/\r/g,'\n'); }
   function lineAt(text, idx) { return text.slice(0, idx).split('\n').length; }
