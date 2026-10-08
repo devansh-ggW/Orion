@@ -229,7 +229,24 @@
     'Browser Security': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-693'},
     'API Security': {owasp:'A01:2025 Broken Access Control', cwe:'Context dependent'},
     'MIME Security': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-16'},
-    'Analysis': {owasp:'Analysis limitation', cwe:'N/A'}
+    'Analysis': {owasp:'Analysis limitation', cwe:'N/A'},
+    'XSS': {owasp:'A05:2025 Injection', cwe:'CWE-79'},
+    'PROTO': {owasp:'A05:2025 Injection', cwe:'CWE-1321'},
+    'INJECT': {owasp:'A05:2025 Injection', cwe:'CWE-74'},
+    'SQL': {owasp:'A05:2025 Injection', cwe:'CWE-89'},
+    'CMD': {owasp:'A05:2025 Injection', cwe:'CWE-78'},
+    'CRYPTO': {owasp:'A04:2025 Cryptographic Failures', cwe:'CWE-327'},
+    'HEADERS': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-693'},
+    'SUPPLY': {owasp:'A03:2025 Software Supply Chain Failures', cwe:'CWE-1104'},
+    'INFRA': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-16'},
+    'IAC': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-16'},
+    'CI': {owasp:'A03:2025 Software Supply Chain Failures', cwe:'CWE-1104'},
+    'API': {owasp:'A01:2025 Broken Access Control', cwe:'CWE-284'},
+    'FRAME': {owasp:'A05:2025 Injection', cwe:'CWE-74'},
+    'BROWSER': {owasp:'A05:2025 Injection', cwe:'CWE-79'},
+    'CONFIG': {owasp:'A02:2025 Security Misconfiguration', cwe:'CWE-16'},
+    'DATA': {owasp:'A01:2025 Broken Access Control', cwe:'CWE-200'},
+    'OBS': {owasp:'A09:2025 Security Logging & Alerting Failures', cwe:'CWE-778'}
   };
 
   function enrich(f) {
