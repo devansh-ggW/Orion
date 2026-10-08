@@ -322,5 +322,91 @@
     verify: 'Every repair instruction must include a concrete verification step tied to the original evidence.'
   });
 
+
+  // Expanded teaching corpus: signals, boundaries and verification vocabulary used by the
+  // prompt compiler and later rule packs. These are guidance data, not automatic vulnerability claims.
+  appendUnique('browserSources', [
+    'document.cookie','document.referrer','location.host','location.origin','location.pathname','location.port',
+    'location.protocol','window.location','window.history','navigator.clipboard','navigator.geolocation',
+    'navigator.mediaDevices','service worker messages','BroadcastChannel','SharedWorker','MessageChannel',
+    'WebSocket','EventSource','postMessage','storage events','hashchange','popstate','beforeunload'
+  ]);
+  appendUnique('serverSources', [
+    'X-Forwarded-For','X-Forwarded-Host','X-Forwarded-Proto','Host header','Origin header','Referer header',
+    'User-Agent header','Cookie header','Authorization header','multipart filename','archive member name',
+    'uploaded MIME type','uploaded magic bytes','file path','session identifier','tenant identifier',
+    'OAuth code','OAuth state','webhook signature','queue message','scheduled job input','CLI argument'
+  ]);
+  appendUnique('htmlSinks', [
+    'innerHTML','outerHTML','insertAdjacentHTML','srcdoc','href','src','action','formaction',
+    'iframe.src','script.src','object.data','embed.src','window.open','location.href','location.assign',
+    'location.replace','document.write','document.writeln','CSSStyleDeclaration.cssText','style attribute',
+    'SVG href','template.innerHTML','DOMParser.parseFromString','Range.createContextualFragment'
+  ]);
+  appendUnique('codeSinks', [
+    'eval','new Function','setTimeout string','setInterval string','vm.runInNewContext','vm.runInThisContext',
+    'child_process.exec','os.system','subprocess shell','Runtime.exec','ProcessBuilder','system','shell_exec',
+    'template compilation','expression evaluation','PowerShell -Command','cmd /c','sh -c','bash -c'
+  ]);
+  appendUnique('querySinks', [
+    'db.query','db.execute','cursor.execute','sequelize.query','knex.raw','jdbc Statement',
+    'Mongo find','Mongo aggregate','Mongo $where','LDAP filter','XPath evaluate','Redis eval',
+    'Elasticsearch query DSL','GraphQL resolver arguments','ORM raw SQL','dynamic ORDER BY'
+  ]);
+  appendUnique('safeBoundaries', [
+    'Content-Security-Policy','Strict-Transport-Security','X-Content-Type-Options',
+    'Permissions-Policy','frame-ancestors','Cross-Origin-Opener-Policy','Cross-Origin-Resource-Policy',
+    'Cross-Origin-Embedder-Policy','SameSite=Lax','SameSite=Strict','Secure','HttpOnly','PKCE',
+    'CSRF token','Origin validation','Referer validation','rate limiting','account lockout/backoff',
+    'schema validator','enum validation','maxLength','maxItems','maxBodySize','request timeout',
+    'response size limit','pagination cap','path containment','canonical path','server-generated filename',
+    'magic-byte validation','archive entry validation','archive count limit','archive expansion limit',
+    'remote host allowlist','private-range blocking','redirect revalidation','DNS rebinding defense',
+    'parameterized query','prepared statement','fixed executable','argument array','constant-time comparison',
+    'cryptographic random','Argon2id','scrypt','bcrypt','AES-GCM','immutable dependency reference'
+  ]);
+  appendUnique('antiPatterns', [
+    'client-side authorization','hidden button authorization','userId from request as identity',
+    'wildcard CORS','origin reflection','credentialed wildcard origins','secrets in localStorage',
+    'secrets in URLs','passwords in logs','tokens in logs','stack traces in JSON responses',
+    'trust browser MIME type','trust filename extension','public upload directory','archive extract without path check',
+    'shell=true','system(request.data)','raw SQL concatenation','dynamic template source',
+    'untrusted deserialization','yaml.load for hostile data','pickle.loads on hostile data',
+    'floating CI actions','latest package tag','curl pipe shell','download then chmod execute',
+    'debug mode in production','verbose request logging','public directory listing','unrestricted proxy URL'
+  ]);
+  const extraTeaching = teaching.frameworksExtended = {
+    nextjs:['getServerSideProps','middleware','headers','redirects','rewrites','next/image','server actions'],
+    nuxt:['useFetch','server routes','navigateTo','v-html'],
+    angular:['bypassSecurityTrustHtml','DomSanitizer','[innerHTML]','Renderer2'],
+    astro:['set:html','Astro.request','Astro.redirect'],
+    express:['trust proxy','express.json limit','cors','helmet','res.cookie','res.redirect','res.sendFile'],
+    fastify:['request.query','request.params','request.body','reply.redirect','@fastify/cors','@fastify/multipart'],
+    django:['csrf_exempt','mark_safe','HttpResponse','FileResponse','request.FILES','request.GET'],
+    flask:['send_file','send_from_directory','safe_join','request.args','request.files'],
+    laravel:['DB::raw','whereRaw','Storage::put','response()->download','redirect()->away'],
+    spring:['@PreAuthorize','@Secured','@RequestParam','@PathVariable','@RequestBody','JdbcTemplate','RestTemplate'],
+    aspnet:['AuthorizeAttribute','Request.Query','Request.Form','FromQuery','FromBody','IHtmlHelper.Raw','File.ReadAllBytes'],
+    rails:['html_safe','raw','send_file','redirect_to','params','permit','protect_from_forgery'],
+    go:['net/http','os.Open','exec.Command','database/sql','template.HTML','url.Parse'],
+    rust:['std::process::Command','std::fs','reqwest::get','serde_json::from_str','sqlx::query'],
+    php:['$_GET','$_POST','$_REQUEST','$_FILES','header','setcookie','include','require','unserialize'],
+    python:['requests','urllib','subprocess','pickle','yaml.load','jinja2.Template','lxml.etree','sqlite3']
+  };
+  teaching.verificationModules.advanced = [
+    'verify production response headers instead of source-only assumptions',
+    'compare trusted and untrusted origins',
+    'test a second tenant/user against an object ID',
+    'test expired and replayed recovery credentials',
+    'test malicious filenames with alternate separators',
+    'test compressed archive count and expansion limits',
+    'test redirect chains rather than only the first destination',
+    'test DNS resolution changes where outbound requests are permitted',
+    'test logging/redaction under failure conditions',
+    'inspect built client bundles for source maps and credentials',
+    'rebuild from a clean lockfile and compare dependency resolution',
+    'run existing unit/integration tests plus a targeted regression for the finding'
+  ];
+
   window.OrionKnowledge = K;
 })();
