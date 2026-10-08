@@ -3,7 +3,7 @@
  * This intentionally avoids claiming complete vulnerability coverage.
  */
 (function () {
-  const TEXT_EXT = new Set(['html','htm','js','mjs','cjs','ts','tsx','jsx','css','json','yaml','yml','xml','md','txt','env','conf','config','php','py','go','rs','java','rb','sql','toml','ini','vue','svelte','map']);
+  const TEXT_EXT = new Set(['html','htm','js','mjs','cjs','ts','tsx','jsx','css','json','yaml','yml','xml','md','txt','env','conf','config','php','py','go','rs','java','kt','kts','rb','cs','csharp','sql','toml','ini','vue','svelte','map','sh','bash','ps1','tf','tfvars','hcl','dockerfile']);
   const SKIP_EXT = new Set(['png','jpg','jpeg','gif','webp','avif','ico','svgz','mp4','webm','mov','mp3','wav','woff','woff2','ttf','otf','eot','pdf','zip','gz','7z','rar','bin','exe','dll']);
   const MAX_TEXT_BYTES = 1_500_000;
   const KNOWLEDGE = window.OrionKnowledge || {};
@@ -165,6 +165,8 @@
     {id:'INPUT-URL-001',category:'Input Validation',severity:'medium',advisory:true,title:'A request-controlled URL is accepted without an obvious scheme or host allowlist',ext:['js','mjs','cjs','ts','tsx','php','py','go','java','rb'],pattern:/\bnew\s+URL\s*\(\s*(?:req(?:uest)?\.(?:query|body|params)|request\.(?:args|json|form|query)|userUrl|targetUrl)\b/gi,reason:'Parsing a URL does not make the destination safe. The application still needs rules for schemes, hosts, redirects, and private address ranges when it will connect to the URL.',fix:'Allow only expected schemes and trusted hosts, then validate the final destination before using it for navigation or server-side requests.',confidenceBase:'low'}
   ];
   RULES.push(...EXTRA_RULES);
+  // Expanded deterministic corpus. Kept outside the core file so the rule library can grow without making engine logic brittle.
+  if (window.OrionPatternPack?.RULES?.length) RULES.push(...window.OrionPatternPack.RULES);
 
   const RULE_IDS = new Set();
   for (const rule of RULES) {
@@ -427,8 +429,9 @@
     return out;
   }
 
-  function matchesRule(rule, text, ext) {
+  function matchesRule(rule, text, ext, lowerText) {
     if (rule.projectWide) return [];
+    if (rule.needle && lowerText && !lowerText.includes(String(rule.needle))) return [];
     if (rule.ext && !rule.ext.includes(ext)) return [];
     const hits=[];
     if (typeof rule.check === 'function') return rule.check(text, ext) || [];
@@ -864,8 +867,9 @@
         findings.push(enrich({id:'FILE-001',category:'Analysis',severity:'low',title:'Large source file partially skipped',file:file.path,line:1,evidence:`${file.text.length.toLocaleString()} characters; analysis capped at ${MAX_TEXT_BYTES.toLocaleString()} characters for responsiveness.`,reason:'Very large files are capped in local analysis to protect browser responsiveness.',fix:'Review the skipped tail manually or analyze the file separately.',confidence:'high',detectedBy:'engine-limit'}));
         file.text = file.text.slice(0, MAX_TEXT_BYTES);
       }
+      const lowerText = file.text.toLowerCase();
       for (const rule of rulesForExt(file.ext)) {
-        const hits = matchesRule(rule, file.text, file.ext);
+        const hits = matchesRule(rule, file.text, file.ext, lowerText);
         for (const hit of hits) {
           const loc = getLineSnippet(file.text, hit.index);
           const base=enrich({
