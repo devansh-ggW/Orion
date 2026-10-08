@@ -129,6 +129,7 @@
   $('#downloadPromptBtn').onclick=()=>{ if(!state.result)return; downloadText('orion-repair-instructions.txt',state.result.prompt); };
   $('#downloadReportBtn').onclick=()=>{ if(!state.result)return; const report=makeReport(); downloadText('orion-security-report.json',JSON.stringify(report,null,2)); };
   $('#copySummaryBtn').onclick=async()=>{ if(!state.result)return; const s=summaryText(); if(await copyText(s)) toast('Summary copied'); else toast('Copy failed — select the summary manually'); };
+  $('#copyVisibleBtn')?.addEventListener('click',async()=>{ const s=visibleFindingsText(); if(await copyText(s)) toast('Visible findings copied'); else toast('Copy failed — select the findings manually'); });
   $('#filters').addEventListener('click',e=>{ const b=e.target.closest('.filter'); if(!b)return; state.filter=b.dataset.filter; state.findingsExpanded=false; document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b)); renderFindings(); });
   $('#seeAllBtn').addEventListener('click',()=>{ state.findingsExpanded=!state.findingsExpanded; renderFindings(); });
   $('#findingSearch')?.addEventListener('input',e=>{ state.search=e.target.value.trim().toLowerCase(); state.findingsExpanded=false; $('#clearFindingSearch').classList.toggle('hidden',!state.search); renderFindings(); });
@@ -238,6 +239,7 @@
     $('#metricFiles').textContent=state.files.length;
     $('#metricFilesHint').textContent=`${state.files.filter(f=>OrionEngine.TEXT_EXT.has((f.path.match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase())).length} readable source`;
     $('#metricRules').textContent=OrionEngine.RULES.length;
+    $('#loadedStatus').textContent=`${state.files.length} files loaded`;
     $('#scanState').textContent='QUEUED';
     $('#progressFill').style.width='0%'; $('#progressPct').textContent='0%'; $('#progressText').textContent='Ready to scan';
   }
@@ -285,6 +287,7 @@
       ? `${reviews.length ? `${reviews.length} review item${reviews.length===1?'':'s'} · ` : ''}${confirmed.filter(f=>f.severity==='critical'||f.severity==='high').length} important or urgent`
       : (reviews.length ? `${reviews.length} review item${reviews.length===1?'':'s'} · no confirmed problems` : 'no problems found');
     $('#metricScore').textContent=result.score;
+    $('#loadedStatus').textContent=`${state.files.length} files loaded`;
     updatePlainSummary(result);
     renderPromptDocument(result.prompt);
     renderFindings();
@@ -334,7 +337,7 @@
 
   function renderFindings(){
     const list=$('#findingList'); const overflow=$('#findingOverflow'); const seeAll=$('#seeAllBtn');
-    if(!state.result){ overflow.classList.add('hidden'); return; }
+    if(!state.result){ overflow.classList.add('hidden'); $('#copyVisibleBtn')?.classList.add('hidden'); return; }
     const query=state.search;
     const rows=state.result.findings.filter(f=>{
       const filterOk=state.filter==='all'||(state.filter==='advisory'?f.advisory:f.severity===state.filter);
@@ -344,6 +347,7 @@
       return hay.includes(query);
     });
     list.innerHTML='';
+    $('#copyVisibleBtn')?.classList.toggle('hidden',!rows.length);
     if(!rows.length){ list.innerHTML='<div class="empty-state"><span class="empty-line"></span><span>No findings in this filter.</span></div>'; overflow.classList.add('hidden'); return; }
     const visible = state.findingsExpanded ? rows : rows.slice(0,10);
     visible.forEach((f,i)=>{
@@ -401,6 +405,22 @@
     if(f.severity==='medium') return 'This is not necessarily an active break-in, but it creates a weakness worth fixing.';
     return 'This is a smaller hardening or review item. It may not be a direct vulnerability on its own.';
   }
+  function visibleFindingsText(){
+    const rows=(state.result?.findings||[]).filter(f=>state.filter==='all'||(state.filter==='advisory'?f.advisory:f.severity===state.filter))
+      .filter(f=>{if(!state.search)return true;const hay=[f.id,f.title,f.plainTitle,f.reason,f.plainWhy,f.file,f.owasp,f.cwe].filter(Boolean).join(' ').toLowerCase();return hay.includes(state.search);});
+    return `ORION visible findings
+Project: ${state.projectName}
+Filter: ${state.filter}
+Search: ${state.search||'none'}
+Count: ${rows.length}
+
+${rows.map((f,i)=>`${i+1}. ${f.plainTitle||f.title} [${f.advisory?'REVIEW':severityLabel(f.severity)}]
+Why: ${f.plainWhy||f.reason||'—'}
+Where: ${f.file||'—'}:${f.line||'—'}
+Fix: ${f.plainFix||f.fix||'—'}
+Rule: ${f.id||'—'}`).join('\n\n')}`;
+  }
+
   function summaryText(){ const r=state.result; const confirmed=r.findings.filter(f=>!f.advisory), reviews=r.findings.filter(f=>f.advisory); const urgent=confirmed.filter(f=>f.severity==='critical').length, important=confirmed.filter(f=>f.severity==='high').length; return `ORION security check\nProject: ${state.projectName}\nSecurity score: ${r.score}/100\nConfirmed security issues: ${confirmed.length}\nReview items: ${reviews.length}\nNeeds urgent action: ${urgent}\nImportant: ${important}\n\n${r.findings.map(f=>`- ${f.plainTitle||f.title} (${f.advisory?'Review item':severityLabel(f.severity)})\n  ${f.plainWhy||f.reason}\n  File: ${f.file}, line ${f.line}`).join('\n')}`; }
   function makeReport(){ return {product:'ORION',version:1,project:state.projectName,generatedAt:new Date().toISOString(),scope:'browser static analysis',limitations:'This is not a guarantee of security or legal compliance and does not replace dynamic testing or expert review.',rulesLoaded:OrionEngine.RULES.length,score:state.result.score,profile:state.result.profile,intelligence:state.result.intelligence || null,files:state.result.files,findings:state.result.findings}; }
 
